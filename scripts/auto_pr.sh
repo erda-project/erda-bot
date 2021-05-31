@@ -9,7 +9,7 @@ git clone "${FORKED_GITHUB_REPO}" .
 git remote add upstream "${GITHUB_REPO}"
 git remote update && git fetch --all
 # checkout CHERRY_PICK_TARGET_BRANCH as base
-git checkout --track upstream/"${CHERRY_PICK_TARGET_BRANCH}"
+git checkout --track upstream/"${CHERRY_PICK_TARGET_BRANCH}" -b base-for-auto-cherry-pick
 # checkout auto-cherry-pick-pr branch from base
 branchForCherryPick="auto-cherry-pick-pr/${GITHUB_PR_NUM}"
 git checkout -b "${branchForCherryPick}"
