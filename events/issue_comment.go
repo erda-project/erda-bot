@@ -6,7 +6,7 @@ type IssueCommentEvent struct {
 	Action string `json:"action,omitempty"` // created, edited, deleted
 
 	Issue struct {
-		Number      uint64 `json:"number,omitempty"`       // 1
+		Number      int    `json:"number,omitempty"`       // 1
 		URL         string `json:"url,omitempty"`          // https://api.github.com/repos/erda-project/test-cherry-pick/issues/1, use this url to get pr detail
 		HtmlURL     string `json:"html_url,omitempty"`     // https://github.com/erda-project/test-cherry-pick/pull/1
 		CommentsURL string `json:"comments_url,omitempty"` // https://github.com/erda-project/test-cherry-pick/pull/1/comments
@@ -39,11 +39,4 @@ type IssueCommentEvent struct {
 	Organization struct {
 		Login string `json:"login,omitempty"` // erda-project
 	} `json:"organization,omitempty"`
-}
-
-type PR struct {
-	Merged         bool   `json:"merged,omitempty"`           // true, false
-	Mergeable      bool   `json:"mergeable,omitempty"`        // true, false
-	Rebaseable     bool   `json:"rebaseable,omitempty"`       // true, false
-	MergeCommitSha string `json:"merge_commit_sha,omitempty"` // c2484325325d65b2494f10970d27c10cf236b82d, use this squashed commit to cherry-pick
 }

@@ -4,17 +4,13 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/erda-project/erda-bot/events"
-	"github.com/erda-project/erda-bot/gh"
 	"github.com/erda-project/erda-bot/handlers"
 )
 
 const (
 	CtxKeyIns     = "ins" // instruction
 	CtxKeyInsArgs = "ins_args"
-	CtxKeyPR      = "pull_request"
 )
 
 type prCommentInstructionHandler struct{ handlers.BaseHandler }
@@ -32,13 +28,6 @@ func (h *prCommentInstructionHandler) Execute(ctx context.Context, req *handlers
 	if e.Issue.PullRequest == nil {
 		return
 	}
-	// get pr detail
-	pr, err := gh.GetPullRequest(e.Issue.PullRequest.URL)
-	if err != nil {
-		logrus.Warnf("failed to get pr(#%d) detail, err: %v", e.Issue.Number, err)
-		return
-	}
-	ctx = context.WithValue(ctx, CtxKeyPR, pr)
 	// instruction
 	ins, args := parseInstructionFromComment(e.Comment.Body)
 	if ins == "" {

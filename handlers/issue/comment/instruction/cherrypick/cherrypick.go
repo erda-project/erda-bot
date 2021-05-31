@@ -34,8 +34,12 @@ func (h *prCommentInstructionCherryPickHandler) Execute(ctx context.Context, req
 		return
 	}
 	e := req.Event.(events.IssueCommentEvent)
-	pr := ctx.Value(instruction.CtxKeyPR).(events.PR)
-	if !pr.Merged {
+	pr, err := gh.GetPR(e.Organization.Login, e.Repository.Name, e.Issue.Number)
+	if err != nil {
+		logrus.Warnf("failed to get pr #%d, err: %v", e.Issue.Number, err)
+		return
+	}
+	if !pr.GetMerged() {
 		logrus.Warnf("pull request not merged, cannot cherry-pick")
 		// auto add tip comment
 		if err := gh.CreateComment(e.Issue.CommentsURL, "Automated cherry pick can **ONLY** be triggered when this PR is **MERGED**!"); err != nil {
@@ -64,7 +68,7 @@ func (h *prCommentInstructionCherryPickHandler) Execute(ctx context.Context, req
 		"GITHUB_REPO":                    e.Repository.CloneURL,
 		"CHERRY_PICK_TARGET_BRANCH":      args[0],
 		"GITHUB_PR_NUM":                  fmt.Sprintf("%d", e.Issue.Number),
-		"MERGE_COMMIT_SHA":               pr.MergeCommitSha,
+		"MERGE_COMMIT_SHA":               pr.GetMergeCommitSHA(),
 		"ORIGIN_ISSUE_BODY":              e.Issue.Body,
 		"PR_TITLE":                       e.Issue.Title,
 		"CHERRY_PICK_FAILED_DETAIL_FILE": cherryPickFailedDetailFile,

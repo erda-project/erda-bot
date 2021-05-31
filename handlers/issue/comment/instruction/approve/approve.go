@@ -24,7 +24,6 @@ func (h *prCommentInstructionApproveHandler) Execute(ctx context.Context, req *h
 		return
 	}
 	e := req.Event.(events.IssueCommentEvent)
-	pr := ctx.Value(instruction.CtxKeyPR).(events.PR)
 	// check write access
 	haveWriteAccess, err := gh.HaveWriteAccess(e.Repository.URL, e.Comment.User.Login)
 	if err != nil {
@@ -42,26 +41,44 @@ func (h *prCommentInstructionApproveHandler) Execute(ctx context.Context, req *h
 		logrus.Warnf("failed to add lgtm label, err: %v", err)
 		return
 	}
+	// approve by bot
+	if err := gh.ApprovePR(e.Organization.Login, e.Repository.Name, e.Issue.Number); err != nil {
+		logrus.Warnf("failed to approve pr, err: %v", err)
+		return
+	}
+
 	// async merge until success
 	go func() {
 		for {
-			// TODO when to rebase branch
-			//if pr.Rebaseable {
-			//	if err := gh.UpdateBranch(e.Issue.PullRequest.URL); err != nil {
-			//		logrus.Warnf("failed to update branch, err: %v, continue", err)
-			//		goto sleep
-			//	}
-			//}
-			pr, err = gh.GetPullRequest(e.Issue.PullRequest.URL)
+			pr, err := gh.GetPR(e.Organization.Login, e.Repository.Name, e.Issue.Number)
 			if err != nil {
-				logrus.Warnf("failed to get issue, err: %v, continue", err)
+				logrus.Warnf("failed to get pr, err: %v, continue", err)
 				goto sleep
 			}
-			if pr.Mergeable {
-				if err := gh.MergePR(e.Issue.PullRequest.URL); err != nil {
+			if pr.GetMerged() {
+				return
+			}
+			if !pr.GetMergeable() {
+				goto sleep
+			}
+			switch pr.GetMergeableState() {
+			case "behind":
+				if err := gh.UpdateBranch(e.Organization.Login, e.Repository.Name, e.Issue.Number); err != nil {
+					logrus.Warnf("failed to update branch, err: %v, continue", err)
+					goto sleep
+				}
+			case "blocked":
+				goto sleep
+			default:
+				result, err := gh.MergePR(e.Organization.Login, e.Repository.Name, e.Issue.Number)
+				if err != nil {
 					logrus.Warnf("failed to merge pr, err: %v, continue", err)
 					goto sleep
 				}
+				if result.GetMerged() {
+					return
+				}
+				goto sleep
 			}
 		sleep:
 			time.Sleep(time.Minute * 1)

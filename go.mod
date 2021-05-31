@@ -3,9 +3,11 @@ module github.com/erda-project/erda-bot
 go 1.16
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/erda-project/erda v0.0.1
 	github.com/google/go-github/v35 v35.2.0
 	github.com/sirupsen/logrus v1.8.1
+	golang.org/x/oauth2 v0.0.0-20210220000619-9bb904979d93
 )
 
 replace (

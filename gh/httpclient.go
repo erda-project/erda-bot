@@ -19,22 +19,6 @@ const (
 
 var hc *httpclient.HTTPClient
 
-func GetPullRequest(url string) (events.PR, error) {
-	var respBody bytes.Buffer
-	resp, err := hc.Get(url).Header(authorizationHeader, bearer+conf.Bot().GitHubToken).Do().Body(&respBody)
-	if err != nil {
-		return events.PR{}, err
-	}
-	if !resp.IsOK() {
-		return events.PR{}, fmt.Errorf("%s", respBody.String())
-	}
-	var pr events.PR
-	if err := json.NewDecoder(&respBody).Decode(&pr); err != nil {
-		return events.PR{}, err
-	}
-	return pr, nil
-}
-
 func EnsureRepoForked(e events.IssueCommentEvent) (string, error) {
 	forkedURL := fmt.Sprintf("https://github.com/%s/%s", conf.Bot().GitHubActor, e.Repository.Name)
 	exist := GetRepo(conf.Bot().GitHubActor, e.Repository.Name)
@@ -125,22 +109,6 @@ func AddLGTMLabel(issueURL string) error {
 	return nil
 }
 
-func UpdateBranch(prURL string) error {
-	hc := httpclient.New(httpclient.WithCompleteRedirect())
-	var respBody bytes.Buffer
-	resp, err := hc.Put(prURL+"/update-branch").
-		Header(authorizationHeader, bearer+conf.Bot().GitHubToken).
-		Header("Accept", "application/vnd.github.lydian-preview+json").
-		Do().Body(&respBody)
-	if err != nil {
-		return err
-	}
-	if !resp.IsOK() {
-		return fmt.Errorf("%s", respBody.String())
-	}
-	return nil
-}
-
 func HaveWriteAccess(repoURL string, login string) (bool, error) {
 	hc := httpclient.New(httpclient.WithCompleteRedirect())
 	var respBody bytes.Buffer
@@ -165,22 +133,4 @@ func HaveWriteAccess(repoURL string, login string) (bool, error) {
 	default:
 		return false, nil
 	}
-}
-
-func MergePR(prURL string) error {
-	hc := httpclient.New(httpclient.WithCompleteRedirect())
-	var respBody bytes.Buffer
-	resp, err := hc.Put(prURL+"/merge").
-		Header(authorizationHeader, bearer+conf.Bot().GitHubToken).
-		JSONBody(map[string]string{
-			"merge_method": "squash",
-		}).
-		Do().Body(&respBody)
-	if err != nil {
-		return err
-	}
-	if !resp.IsOK() {
-		return fmt.Errorf("%s", respBody.String())
-	}
-	return nil
 }
