@@ -14,7 +14,8 @@ git checkout --track upstream/"${CHERRY_PICK_TARGET_BRANCH}" -b base-for-auto-ch
 branchForCherryPick="auto-cherry-pick-pr/${GITHUB_PR_NUM}"
 git checkout -b "${branchForCherryPick}"
 # cherry-pick commit
-git cherry-pick "${MERGE_COMMIT_SHA}"
+cherryPickFailedDetailFile="${CHERRY_PICK_FAILED_DETAIL_FILE}"
+(git cherry-pick "${MERGE_COMMIT_SHA}" > "${CHERRY_PICK_FAILED_DETAIL_FILE}" | tee) || (git diff >> "${CHERRY_PICK_FAILED_DETAIL_FILE}" && false)
 # push to forked repo
 git push origin "${branchForCherryPick}" --force
 # use hub to create pr
