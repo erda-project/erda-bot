@@ -1,0 +1,13 @@
+version: "2.0"
+services:
+  bot:
+    cmd:
+    ports:
+    - 4567
+    resources:
+      cpu: 0.25
+      mem: 2048
+    deployments:
+      replicas: 1
+    expose:
+    - 4567

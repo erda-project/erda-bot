@@ -1,0 +1,22 @@
+version: "1.1"
+stages:
+  - stage:
+      - git-checkout:
+          alias: repo
+          params:
+            depth: 1
+  - stage:
+      - dockerfile:
+          params:
+            path: Dockerfile
+            workdir: ${repo}
+  - stage:
+      - release:
+          params:
+            dice_yml: ${repo}/dice.yml
+            image:
+              bot: ${dockerfile:OUTPUT:image}
+  - stage:
+      - dice:
+          params:
+            release_id: ${release:OUTPUT:releaseID}
