@@ -32,7 +32,7 @@ func (h *prCommentInstructionApproveHandler) Execute(ctx context.Context, req *h
 	}
 	if !haveWriteAccess {
 		// send no permission comment
-		gh.CreateComment(e.Issue.CommentsURL, "You have no write access to use /merge instruction.")
+		gh.CreateComment(e.Issue.CommentsURL, "You have no write access to use /approve instruction.")
 		return
 	}
 	// merge
