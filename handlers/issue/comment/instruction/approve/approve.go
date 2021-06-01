@@ -24,6 +24,11 @@ func (h *prCommentInstructionApproveHandler) Execute(ctx context.Context, req *h
 		return
 	}
 	e := req.Event.(events.IssueCommentEvent)
+	// check pr author
+	if e.Issue.User.Login == e.Comment.User.Login {
+		gh.CreateComment(e.Issue.CommentsURL, "Pull request authors can't approve their own pull request.")
+		return
+	}
 	// check write access
 	haveWriteAccess, err := gh.HaveWriteAccess(e.Repository.URL, e.Comment.User.Login)
 	if err != nil {
