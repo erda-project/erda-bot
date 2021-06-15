@@ -6,8 +6,8 @@ RUN go build -o /app/bot
 
 FROM golang:1.16-alpine
 
-RUN apk add --no-cache vim git bash gnupg
-RUN go get github.com/github/hub
+RUN apk add --no-cache vim git bash gnupg docker-cli make
+RUN go get github.com/github/hub && go get github.com/mikefarah/yq/v4
 
 COPY --from=BASE /app/bot /bot
 COPY /scripts /scripts
