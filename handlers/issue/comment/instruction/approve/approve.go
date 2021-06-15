@@ -41,9 +41,9 @@ func (h *prCommentInstructionApproveHandler) Execute(ctx context.Context, req *h
 		return
 	}
 	// merge
-	// auto add lgtm label
-	if err := gh.AddLGTMLabel(e.Issue.URL); err != nil {
-		logrus.Warnf("failed to add lgtm label, err: %v", err)
+	// auto add approved label
+	if err := gh.AddApprovedLabel(e.Issue.URL); err != nil {
+		logrus.Warnf("failed to add approved label, err: %v", err)
 		return
 	}
 	// approve by bot

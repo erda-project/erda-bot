@@ -95,11 +95,11 @@ func CreateComment(commentsURL, comment string) error {
 	return nil
 }
 
-func AddLGTMLabel(issueURL string) error {
+func AddApprovedLabel(issueURL string) error {
 	hc := httpclient.New(httpclient.WithCompleteRedirect())
 	var respBody bytes.Buffer
 	resp, err := hc.Post(issueURL+"/labels").Header(authorizationHeader, bearer+conf.Bot().GitHubToken).
-		JSONBody(map[string][]string{"labels": {"lgtm"}}).Do().Body(&respBody)
+		JSONBody(map[string][]string{"labels": {"approved"}}).Do().Body(&respBody)
 	if err != nil {
 		return err
 	}
