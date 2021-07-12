@@ -46,11 +46,11 @@ func (h *prCommentInstructionApproveHandler) Execute(ctx context.Context, req *h
 		logrus.Warnf("failed to add approved label, err: %v", err)
 		return
 	}
-	// // approve by bot
-	// if err := gh.ApprovePR(e.Organization.Login, e.Repository.Name, e.Issue.Number); err != nil {
-	// 	logrus.Warnf("failed to approve pr, err: %v", err)
-	// 	return
-	// }
+	// approve by bot
+	if err := gh.ApprovePR(e.Organization.Login, e.Repository.Name, e.Issue.Number); err != nil {
+		logrus.Warnf("failed to approve pr, err: %v", err)
+		return
+	}
 
 	// async merge until success
 	go func() {
