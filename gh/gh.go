@@ -22,7 +22,7 @@ func MergePR(owner, repo string, pullNumber int) (*github.PullRequestMergeResult
 func ApprovePR(owner, repo string, pullNumber int) error {
 	ctx := context.Background()
 	_, _, err := client.PullRequests.CreateReview(ctx, owner, repo, pullNumber, &github.PullRequestReviewRequest{
-		Event:    &[]string{"APPROVE"}[0],
+		Event: &[]string{"APPROVE"}[0],
 	})
 	return err
 }
@@ -39,4 +39,12 @@ func GetPR(owner, repo string, pullNumber int) (*github.PullRequest, error) {
 		return nil, err
 	}
 	return pr, nil
+}
+
+func GetBranchProtection(owner, repo, branch string) (*github.Protection, error) {
+	protection, _, err := client.Repositories.GetBranchProtection(context.Background(), owner, repo, branch)
+	if err != nil {
+		return nil, err
+	}
+	return protection, nil
 }
