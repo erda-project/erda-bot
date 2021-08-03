@@ -15,6 +15,7 @@ import (
 	"github.com/erda-project/erda-bot/gh"
 	"github.com/erda-project/erda-bot/handlers"
 	"github.com/erda-project/erda-bot/handlers/issue/comment/instruction"
+	"github.com/erda-project/erda/pkg/uuid"
 )
 
 type prCommentInstructionCherryPickHandler struct{ handlers.BaseHandler }
@@ -72,6 +73,7 @@ func (h *prCommentInstructionCherryPickHandler) Execute(ctx context.Context, req
 		"ORIGIN_ISSUE_BODY":              e.Issue.Body,
 		"PR_TITLE":                       e.Issue.Title,
 		"CHERRY_PICK_FAILED_DETAIL_FILE": cherryPickFailedDetailFile,
+		"UUID":                           uuid.SnowFlakeID(),
 	}
 	for k, v := range envs {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))

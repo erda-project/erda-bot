@@ -11,7 +11,7 @@ git remote update && git fetch --all
 # checkout CHERRY_PICK_TARGET_BRANCH as base
 git checkout --track upstream/"${CHERRY_PICK_TARGET_BRANCH}" -b base-for-auto-cherry-pick
 # checkout auto-cherry-pick-pr branch from base
-branchForCherryPick="auto-cherry-pick-pr/${GITHUB_PR_NUM}"
+branchForCherryPick="auto-cherry-pick-pr/${GITHUB_PR_NUM}-${UUID}" # one pr cherry-pick to multi branches
 git checkout -b "${branchForCherryPick}"
 # cherry-pick commit
 cherryPickFailedDetailFile="${CHERRY_PICK_FAILED_DETAIL_FILE}"
