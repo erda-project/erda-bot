@@ -48,3 +48,8 @@ func GetBranchProtection(owner, repo, branch string) (*github.Protection, error)
 	}
 	return protection, nil
 }
+
+func AddIssueAssignees(owner, repo string, pullNumber int, assignees []string) error {
+	_, _, err := client.Issues.AddAssignees(context.Background(), owner, repo, pullNumber, assignees)
+	return err
+}

@@ -10,6 +10,7 @@ import (
 	"github.com/erda-project/erda-bot/handlers/issue/comment"
 	"github.com/erda-project/erda-bot/handlers/issue/comment/instruction"
 	"github.com/erda-project/erda-bot/handlers/issue/comment/instruction/approve"
+	"github.com/erda-project/erda-bot/handlers/issue/comment/instruction/assign"
 	"github.com/erda-project/erda-bot/handlers/issue/comment/instruction/cherrypick"
 	"github.com/erda-project/erda/pkg/httpserver"
 )
@@ -31,6 +32,7 @@ func Webhooks(ctx context.Context, r *http.Request, vars map[string]string) (htt
 				instruction.NewPrCommentInstructionHandler(
 					cherrypick.NewPrCommentInstructionCherryPickHandler(),
 					approve.NewPrCommentInstructionApproveHandler(),
+					assign.NewPrCommentInstructionAssignHandler(),
 				),
 			),
 			// other event type handler here
