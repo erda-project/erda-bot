@@ -53,3 +53,8 @@ func AddIssueAssignees(owner, repo string, pullNumber int, assignees []string) e
 	_, _, err := client.Issues.AddAssignees(context.Background(), owner, repo, pullNumber, assignees)
 	return err
 }
+
+func AddPRReviewers(owner, repo string, pullNumber int, reviewers []string) error {
+	_, _, err := client.PullRequests.RequestReviewers(context.Background(), owner, repo, pullNumber, github.ReviewersRequest{Reviewers: reviewers})
+	return err
+}

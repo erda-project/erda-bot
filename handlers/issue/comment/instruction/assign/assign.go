@@ -8,6 +8,7 @@ import (
 	"github.com/erda-project/erda-bot/gh"
 	"github.com/erda-project/erda-bot/handlers"
 	"github.com/erda-project/erda-bot/handlers/issue/comment/instruction"
+	"github.com/erda-project/erda/pkg/strutil"
 )
 
 type prCommentInstructionAssignHandler struct{ handlers.BaseHandler }
@@ -34,7 +35,8 @@ func (h *prCommentInstructionAssignHandler) Execute(ctx context.Context, req *ha
 		return
 	}
 	// add reviewers
-	if err := gh.AddIssueAssignees(e.Organization.Login, e.Repository.Name, e.Issue.Number, assignees); err != nil {
+	assignees = strutil.TrimSlicePrefixes(assignees, "@") // @sfwn -> sfwn
+	if err := gh.AddPRReviewers(e.Organization.Login, e.Repository.Name, e.Issue.Number, assignees); err != nil {
 		gh.CreateComment(e.Issue.CommentsURL, fmt.Sprintf("Add assignees failed, err: %v", err))
 		return
 	}
