@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/google/go-github/v35/github"
 	"github.com/sirupsen/logrus"
 
 	"github.com/erda-project/erda-bot/conf"
@@ -55,6 +56,15 @@ func (h *prCommentInstructionCherryPickHandler) Execute(ctx context.Context, req
 		return
 	}
 
+	// do cherry-picks
+	for _, arg := range args {
+		createPR(e, pr, forkedURL, arg)
+	}
+
+	h.DoNexts(ctx, req)
+}
+
+func createPR(e events.IssueCommentEvent, pr *github.PullRequest, forkedURL string, targetBranch string) {
 	// run scripts
 	cmd := exec.Command("/scripts/auto_pr.sh")
 	tmpDir, _ := ioutil.TempDir("", "")
@@ -67,7 +77,7 @@ func (h *prCommentInstructionCherryPickHandler) Execute(ctx context.Context, req
 		"GITHUB_TOKEN":                   conf.Bot().GitHubToken,
 		"FORKED_GITHUB_REPO":             forkedURL,
 		"GITHUB_REPO":                    e.Repository.CloneURL,
-		"CHERRY_PICK_TARGET_BRANCH":      args[0],
+		"CHERRY_PICK_TARGET_BRANCH":      targetBranch,
 		"GITHUB_PR_NUM":                  fmt.Sprintf("%d", e.Issue.Number),
 		"MERGE_COMMIT_SHA":               pr.GetMergeCommitSHA(),
 		"ORIGIN_ISSUE_BODY":              e.Issue.Body,
@@ -81,7 +91,7 @@ func (h *prCommentInstructionCherryPickHandler) Execute(ctx context.Context, req
 	cmd.Env = append(cmd.Env, os.Environ()...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err = cmd.Run()
+	err := cmd.Run()
 	if err != nil {
 		logrus.Warnf("failed to exec auto_pr.sh, err: %v", err)
 		// get cherry-pick failed detail
@@ -96,8 +106,5 @@ func (h *prCommentInstructionCherryPickHandler) Execute(ctx context.Context, req
 					"```",
 					string(cherryPickDetailBytes)))
 		}
-		return
 	}
-
-	h.DoNexts(ctx, req)
 }
