@@ -58,3 +58,11 @@ func AddPRReviewers(owner, repo string, pullNumber int, reviewers []string) erro
 	_, _, err := client.PullRequests.RequestReviewers(context.Background(), owner, repo, pullNumber, github.ReviewersRequest{Reviewers: reviewers})
 	return err
 }
+
+func GetRepoStar(owner, repo string) (int, error) {
+	r, _, err := client.Repositories.Get(context.Background(), owner, repo)
+	if err != nil {
+		return 0, err
+	}
+	return r.GetStargazersCount(), nil
+}

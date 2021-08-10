@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"context"
-
-	"github.com/erda-project/erda-bot/events"
 )
 
 ////////////////////////
@@ -35,12 +33,6 @@ func NewEventDispatchHandler(nexts ...Handler) *eventDispatchHandler {
 }
 
 func (h *eventDispatchHandler) Execute(ctx context.Context, req *Request) {
-	switch req.EventType {
-	case events.TypeIssueComment:
-		h.DoNexts(ctx, req)
-		return
-	default:
-		return
-	}
+	h.DoNexts(ctx, req)
 }
 
