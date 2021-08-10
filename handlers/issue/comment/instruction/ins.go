@@ -47,7 +47,7 @@ func parseInstructionFromComment(comment string) (string, []string) {
 		return "", nil
 	}
 	comment = comment[1:]
-	ss := strings.SplitN(comment, " ", 2)
+	ss := strings.SplitN(comment, " ", -1)
 	if len(ss) == 1 {
 		return ss[0], nil
 	}
