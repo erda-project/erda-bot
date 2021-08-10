@@ -27,4 +27,4 @@ Auto send a DingTalk message when star count added.
 You should set two environment variables:
 
 - `DINGTALK_ACCESS_TOKEN`
-- `DINGTALK_SECRET` (optinal)
+- `DINGTALK_SECRET` (optional)
