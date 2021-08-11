@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/go-github/v35/github"
 	"github.com/sirupsen/logrus"
@@ -20,7 +21,7 @@ import (
 	"github.com/erda-project/erda/pkg/uuid"
 )
 
-type prCommentInstructionCherryPickHandler struct{comment.IssueCommentHandler}
+type prCommentInstructionCherryPickHandler struct{ comment.IssueCommentHandler }
 
 func NewPrCommentInstructionCherryPickHandler(nexts ...handlers.Handler) *prCommentInstructionCherryPickHandler {
 	return &prCommentInstructionCherryPickHandler{*comment.NewIssueCommentHandler(nexts...)}
@@ -80,18 +81,19 @@ func createPR(e github.IssueCommentEvent, pr *github.PullRequest, forkedURL stri
 	cmd.Dir = tmpDir
 	const cherryPickFailedDetailFile = "__cherry_pick_failed_detail.txt"
 	envs := map[string]string{
-		"GITHUB_ACTOR":                   conf.Bot().GitHubActor,
-		"GITHUB_EMAIL":                   conf.Bot().GitHubEmail,
-		"GITHUB_TOKEN":                   conf.Bot().GitHubToken,
-		"FORKED_GITHUB_REPO":             forkedURL,
-		"GITHUB_REPO":                    e.Repo.GetCloneURL(),
-		"CHERRY_PICK_TARGET_BRANCH":      targetBranch,
-		"GITHUB_PR_NUM":                  fmt.Sprintf("%d", e.Issue.Number),
-		"MERGE_COMMIT_SHA":               pr.GetMergeCommitSHA(),
-		"ORIGIN_ISSUE_BODY":              e.Issue.GetBody(),
-		"PR_TITLE":                       e.Issue.GetTitle(),
-		"CHERRY_PICK_FAILED_DETAIL_FILE": cherryPickFailedDetailFile,
-		"UUID":                           uuid.SnowFlakeID(),
+		"GITHUB_ACTOR":                       conf.Bot().GitHubActor,
+		"GITHUB_EMAIL":                       conf.Bot().GitHubEmail,
+		"GITHUB_TOKEN":                       conf.Bot().GitHubToken,
+		"FORKED_GITHUB_REPO":                 forkedURL,
+		"GITHUB_REPO":                        e.Repo.GetCloneURL(),
+		"CHERRY_PICK_TARGET_BRANCH":          targetBranch,
+		"POLISHED_CHERRY_PICK_TARGET_BRANCH": strings.ReplaceAll(targetBranch, "/", "-"),
+		"GITHUB_PR_NUM":                      fmt.Sprintf("%d", e.Issue.Number),
+		"MERGE_COMMIT_SHA":                   pr.GetMergeCommitSHA(),
+		"ORIGIN_ISSUE_BODY":                  e.Issue.GetBody(),
+		"PR_TITLE":                           e.Issue.GetTitle(),
+		"CHERRY_PICK_FAILED_DETAIL_FILE":     cherryPickFailedDetailFile,
+		"UUID":                               uuid.SnowFlakeID(),
 	}
 	for k, v := range envs {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
