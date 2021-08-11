@@ -88,7 +88,7 @@ func createPR(e github.IssueCommentEvent, pr *github.PullRequest, forkedURL stri
 		"GITHUB_REPO":                        e.Repo.GetCloneURL(),
 		"CHERRY_PICK_TARGET_BRANCH":          targetBranch,
 		"POLISHED_CHERRY_PICK_TARGET_BRANCH": strings.ReplaceAll(targetBranch, "/", "-"),
-		"GITHUB_PR_NUM":                      fmt.Sprintf("%d", e.Issue.Number),
+		"GITHUB_PR_NUM":                      fmt.Sprintf("%d", e.Issue.GetNumber()),
 		"MERGE_COMMIT_SHA":                   pr.GetMergeCommitSHA(),
 		"ORIGIN_ISSUE_BODY":                  e.Issue.GetBody(),
 		"PR_TITLE":                           e.Issue.GetTitle(),
