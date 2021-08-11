@@ -4,37 +4,39 @@ import (
 	"context"
 	"strings"
 
+	"github.com/google/go-github/v35/github"
+
 	"github.com/erda-project/erda-bot/events"
 	"github.com/erda-project/erda-bot/handlers"
+	"github.com/erda-project/erda-bot/handlers/issue/comment"
+	"github.com/erda-project/erda/pkg/strutil"
 )
 
 const (
-	CtxKeyIns     = "ins" // instruction
-	CtxKeyInsArgs = "ins_args"
+	CtxKeyMultiIns = "multi_ins" // []events.InstructionWithArgs
 )
 
-type prCommentInstructionHandler struct{ handlers.BaseHandler }
+type prCommentInstructionHandler struct{ comment.IssueCommentHandler }
 
 func NewPrCommentInstructionHandler(nexts ...handlers.Handler) *prCommentInstructionHandler {
-	return &prCommentInstructionHandler{handlers.BaseHandler{Nexts: nexts}}
+	return &prCommentInstructionHandler{*comment.NewIssueCommentHandler(nexts...)}
 }
 
 func (h *prCommentInstructionHandler) Execute(ctx context.Context, req *handlers.Request) {
-	e, ok := req.Event.(events.IssueCommentEvent)
+	e, ok := req.Event.(github.IssueCommentEvent)
 	if !ok {
 		return
 	}
 	// filter pr issue
-	if e.Issue.PullRequest == nil {
+	if !e.Issue.IsPullRequest() {
 		return
 	}
-	// instruction
-	ins, args := parseInstructionFromComment(e.Comment.Body)
-	if ins == "" {
+	// instructions
+	multiIns := parseMultiInstructions(e.GetComment().GetBody())
+	if len(multiIns) == 0 {
 		return
 	}
-	ctx = context.WithValue(ctx, CtxKeyIns, ins)
-	ctx = context.WithValue(ctx, CtxKeyInsArgs, args)
+	ctx = context.WithValue(ctx, CtxKeyMultiIns, multiIns)
 
 	h.DoNexts(ctx, req)
 }
@@ -52,4 +54,17 @@ func parseInstructionFromComment(comment string) (string, []string) {
 		return ss[0], nil
 	}
 	return ss[0], ss[1:]
+}
+
+func parseMultiInstructions(text string) []events.InstructionWithArgs {
+	var results []events.InstructionWithArgs
+	lines := strutil.Split(text, "\n", true)
+	for _, line := range lines {
+		ins, args := parseInstructionFromComment(line)
+		if ins == "" {
+			continue
+		}
+		results = append(results, events.InstructionWithArgs{Instruction: ins, Args: args})
+	}
+	return results
 }

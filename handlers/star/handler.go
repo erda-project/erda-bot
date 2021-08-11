@@ -26,6 +26,13 @@ func NewStarHandler(nexts ...handlers.Handler) *starHandler {
 	return &starHandler{handlers.BaseHandler{Nexts: nexts}}
 }
 
+func (h *starHandler) Precheck(ctx context.Context, req *handlers.Request) bool {
+	if req.EventType != events.TypeStar {
+		return false
+	}
+	return true
+}
+
 func (h *starHandler) Execute(ctx context.Context, req *handlers.Request) {
 	if req.EventType != events.TypeStar {
 		return

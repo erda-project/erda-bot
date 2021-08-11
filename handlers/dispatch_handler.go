@@ -12,16 +12,16 @@ func NewEventTypeParseHandler(nexts ...Handler) *eventTypeParseHandler {
 
 type eventTypeParseHandler struct{ BaseHandler }
 
-func (h *eventTypeParseHandler) Execute(ctx context.Context, req *Request) {
+func (h *eventTypeParseHandler) Precheck(ctx context.Context, req *Request) bool {
 	if req.HTTPRequest == nil {
-		return
+		return false
 	}
 	eventType := req.HTTPRequest.Header.Get("X-GitHub-Event")
 	if eventType == "" {
-		return
+		return false
 	}
 	req.EventType = eventType
-	h.DoNexts(ctx, req)
+	return true
 }
 
 ////////////////////////
@@ -31,8 +31,3 @@ type eventDispatchHandler struct{ BaseHandler }
 func NewEventDispatchHandler(nexts ...Handler) *eventDispatchHandler {
 	return &eventDispatchHandler{BaseHandler{Nexts: nexts}}
 }
-
-func (h *eventDispatchHandler) Execute(ctx context.Context, req *Request) {
-	h.DoNexts(ctx, req)
-}
-

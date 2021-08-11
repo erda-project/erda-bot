@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/erda-project/erda-bot/conf"
-	"github.com/erda-project/erda-bot/events"
+	"github.com/google/go-github/v35/github"
 
+	"github.com/erda-project/erda-bot/conf"
 	"github.com/erda-project/erda/pkg/httpclient"
 )
 
@@ -19,14 +19,14 @@ const (
 
 var hc *httpclient.HTTPClient
 
-func EnsureRepoForked(e events.IssueCommentEvent) (string, error) {
-	forkedURL := fmt.Sprintf("https://github.com/%s/%s", conf.Bot().GitHubActor, e.Repository.Name)
-	exist := GetRepo(conf.Bot().GitHubActor, e.Repository.Name)
+func EnsureRepoForked(e github.IssueCommentEvent) (string, error) {
+	forkedURL := fmt.Sprintf("https://github.com/%s/%s", conf.Bot().GitHubActor, e.Repo.GetName())
+	exist := GetRepo(conf.Bot().GitHubActor, e.Repo.GetName())
 	if exist {
 		return forkedURL, nil
 	}
 	// not exist, do fork
-	err := CreateRepoFork(e.Organization.Login, e.Repository.Name)
+	err := CreateRepoFork(e.Repo.Owner.GetLogin(), e.Repo.GetName())
 	if err != nil {
 		return forkedURL, err
 	}

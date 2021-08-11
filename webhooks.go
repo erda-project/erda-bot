@@ -12,6 +12,7 @@ import (
 	"github.com/erda-project/erda-bot/handlers/issue/comment/instruction/approve"
 	"github.com/erda-project/erda-bot/handlers/issue/comment/instruction/assign"
 	"github.com/erda-project/erda-bot/handlers/issue/comment/instruction/cherrypick"
+	"github.com/erda-project/erda-bot/handlers/issue/pr"
 	"github.com/erda-project/erda-bot/handlers/star"
 	"github.com/erda-project/erda/pkg/httpserver"
 )
@@ -27,19 +28,30 @@ func Webhooks(ctx context.Context, r *http.Request, vars map[string]string) (htt
 	req := &handlers.Request{EventBytes: eventBytes, HTTPRequest: r}
 
 	// init handlers chain of responsibility
-	h := handlers.NewEventTypeParseHandler(
-		handlers.NewEventDispatchHandler(
-			comment.NewIssueCommentHandler(
-				instruction.NewPrCommentInstructionHandler(
-					cherrypick.NewPrCommentInstructionCherryPickHandler(),
-					approve.NewPrCommentInstructionApproveHandler(),
-					assign.NewPrCommentInstructionAssignHandler(),
+	h :=
+		handlers.NewRootHandler(
+			handlers.NewEventTypeParseHandler(
+				handlers.NewEventDispatchHandler(
+					comment.NewIssueCommentHandler(
+						instruction.NewPrCommentInstructionHandler(
+							cherrypick.NewPrCommentInstructionCherryPickHandler(),
+							approve.NewPrCommentInstructionApproveHandler(),
+							assign.NewPrCommentInstructionAssignHandler(),
+						),
+					),
+					// other event type handler here
+					star.NewStarHandler(),
+					pr.NewPRHandler(
+						comment.NewIssueCommentHandler(
+							instruction.NewPrCommentInstructionHandler(
+								cherrypick.NewPrCommentInstructionCherryPickHandler(),
+								assign.NewPrCommentInstructionAssignHandler(),
+							),
+						),
+					),
 				),
 			),
-			// other event type handler here
-			star.NewStarHandler(),
-		),
-	)
+		)
 
 	// handle request
 	go h.Execute(ctx, req)

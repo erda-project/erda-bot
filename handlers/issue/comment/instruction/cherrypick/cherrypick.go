@@ -15,56 +15,64 @@ import (
 	"github.com/erda-project/erda-bot/events"
 	"github.com/erda-project/erda-bot/gh"
 	"github.com/erda-project/erda-bot/handlers"
+	"github.com/erda-project/erda-bot/handlers/issue/comment"
 	"github.com/erda-project/erda-bot/handlers/issue/comment/instruction"
 	"github.com/erda-project/erda/pkg/uuid"
 )
 
-type prCommentInstructionCherryPickHandler struct{ handlers.BaseHandler }
+type prCommentInstructionCherryPickHandler struct{comment.IssueCommentHandler}
 
 func NewPrCommentInstructionCherryPickHandler(nexts ...handlers.Handler) *prCommentInstructionCherryPickHandler {
-	return &prCommentInstructionCherryPickHandler{handlers.BaseHandler{Nexts: nexts}}
+	return &prCommentInstructionCherryPickHandler{*comment.NewIssueCommentHandler(nexts...)}
 }
 
 func (h *prCommentInstructionCherryPickHandler) Execute(ctx context.Context, req *handlers.Request) {
-	ins := ctx.Value(instruction.CtxKeyIns).(string)
-	if ins != "cherry-pick" {
-		return
-	}
-	args := ctx.Value(instruction.CtxKeyInsArgs).([]string)
-	if len(args) == 0 {
-		logrus.Warnf("missing cherry-pick target branch, such as release/1.0")
-		return
-	}
-	e := req.Event.(events.IssueCommentEvent)
-	pr, err := gh.GetPR(e.Organization.Login, e.Repository.Name, e.Issue.Number)
-	if err != nil {
-		logrus.Warnf("failed to get pr #%d, err: %v", e.Issue.Number, err)
-		return
-	}
-	if !pr.GetMerged() {
-		logrus.Warnf("pull request not merged, cannot cherry-pick")
-		// auto add tip comment
-		if err := gh.CreateComment(e.Issue.CommentsURL, "Automated cherry pick can **ONLY** be triggered when this PR is **MERGED**!"); err != nil {
-			logrus.Warnf("failed to create tip comment, err: %v", err)
+	multiIns := ctx.Value(instruction.CtxKeyMultiIns).([]events.InstructionWithArgs)
+	var filterIns []events.InstructionWithArgs
+	for _, ins := range multiIns {
+		if ins.Instruction != "cherry-pick" {
+			continue
 		}
-		return
-	}
-	// auto fork if not forked
-	forkedURL, err := gh.EnsureRepoForked(e)
-	if err != nil {
-		logrus.Warnf("failed to ensure repo forked, err: %v", err)
-		return
+		filterIns = append(filterIns, ins)
 	}
 
-	// do cherry-picks
-	for _, arg := range args {
-		createPR(e, pr, forkedURL, arg)
+	// handle each ins
+	for _, insWithArgs := range filterIns {
+		if len(insWithArgs.Args) == 0 {
+			logrus.Warnf("missing cherry-pick target branch, such as release/1.0")
+			return
+		}
+		e := req.Event.(github.IssueCommentEvent)
+		pr, err := gh.GetPR(e.Repo.Owner.GetLogin(), e.Repo.GetName(), e.Issue.GetNumber())
+		if err != nil {
+			logrus.Warnf("failed to get pr #%d, err: %v", e.Issue.Number, err)
+			return
+		}
+		if !pr.GetMerged() {
+			logrus.Warnf("pull request not merged, cannot cherry-pick")
+			// auto add tip comment
+			if err := gh.CreateComment(e.Issue.GetCommentsURL(), "Automated cherry pick can **ONLY** be triggered when this PR is **MERGED**!"); err != nil {
+				logrus.Warnf("failed to create tip comment, err: %v", err)
+			}
+			return
+		}
+		// auto fork if not forked
+		forkedURL, err := gh.EnsureRepoForked(e)
+		if err != nil {
+			logrus.Warnf("failed to ensure repo forked, err: %v", err)
+			return
+		}
+
+		// do cherry-picks
+		for _, arg := range insWithArgs.Args {
+			createPR(e, pr, forkedURL, arg)
+		}
 	}
 
 	h.DoNexts(ctx, req)
 }
 
-func createPR(e events.IssueCommentEvent, pr *github.PullRequest, forkedURL string, targetBranch string) {
+func createPR(e github.IssueCommentEvent, pr *github.PullRequest, forkedURL string, targetBranch string) {
 	// run scripts
 	cmd := exec.Command("/scripts/auto_pr.sh")
 	tmpDir, _ := ioutil.TempDir("", "")
@@ -76,12 +84,12 @@ func createPR(e events.IssueCommentEvent, pr *github.PullRequest, forkedURL stri
 		"GITHUB_EMAIL":                   conf.Bot().GitHubEmail,
 		"GITHUB_TOKEN":                   conf.Bot().GitHubToken,
 		"FORKED_GITHUB_REPO":             forkedURL,
-		"GITHUB_REPO":                    e.Repository.CloneURL,
+		"GITHUB_REPO":                    e.Repo.GetCloneURL(),
 		"CHERRY_PICK_TARGET_BRANCH":      targetBranch,
 		"GITHUB_PR_NUM":                  fmt.Sprintf("%d", e.Issue.Number),
 		"MERGE_COMMIT_SHA":               pr.GetMergeCommitSHA(),
-		"ORIGIN_ISSUE_BODY":              e.Issue.Body,
-		"PR_TITLE":                       e.Issue.Title,
+		"ORIGIN_ISSUE_BODY":              e.Issue.GetBody(),
+		"PR_TITLE":                       e.Issue.GetTitle(),
 		"CHERRY_PICK_FAILED_DETAIL_FILE": cherryPickFailedDetailFile,
 		"UUID":                           uuid.SnowFlakeID(),
 	}
@@ -97,7 +105,7 @@ func createPR(e events.IssueCommentEvent, pr *github.PullRequest, forkedURL stri
 		// get cherry-pick failed detail
 		cherryPickDetailBytes, err := os.ReadFile(filepath.Join(tmpDir, cherryPickFailedDetailFile))
 		if err == nil {
-			gh.CreateComment(e.Issue.CommentsURL,
+			gh.CreateComment(e.Issue.GetCommentsURL(),
 				fmt.Sprintf(""+
 					"Automated cherry pick failed, please resolve the confilcts and create PR manually.\n"+
 					"Details:\n"+

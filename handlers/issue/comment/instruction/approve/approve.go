@@ -4,49 +4,58 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/go-github/v35/github"
 	"github.com/sirupsen/logrus"
 
 	"github.com/erda-project/erda-bot/events"
 	"github.com/erda-project/erda-bot/gh"
 	"github.com/erda-project/erda-bot/handlers"
+	"github.com/erda-project/erda-bot/handlers/issue/comment"
 	"github.com/erda-project/erda-bot/handlers/issue/comment/instruction"
 )
 
-type prCommentInstructionApproveHandler struct{ handlers.BaseHandler }
+type prCommentInstructionApproveHandler struct{ comment.IssueCommentHandler }
 
 func NewPrCommentInstructionApproveHandler(nexts ...handlers.Handler) *prCommentInstructionApproveHandler {
-	return &prCommentInstructionApproveHandler{handlers.BaseHandler{Nexts: nexts}}
+	return &prCommentInstructionApproveHandler{*comment.NewIssueCommentHandler(nexts...)}
 }
 
 func (h *prCommentInstructionApproveHandler) Execute(ctx context.Context, req *handlers.Request) {
-	ins := ctx.Value(instruction.CtxKeyIns).(string)
-	if ins != "approve" {
+	multiIns := ctx.Value(instruction.CtxKeyMultiIns).([]events.InstructionWithArgs)
+	find := false
+	for _, ins := range multiIns {
+		if ins.Instruction == "approve" {
+			find = true
+			break
+		}
+	}
+	if !find {
 		return
 	}
-	e := req.Event.(events.IssueCommentEvent)
+	e := req.Event.(github.IssueCommentEvent)
 	// check pr author
-	if e.Issue.User.Login == e.Comment.User.Login {
-		gh.CreateComment(e.Issue.CommentsURL, "Pull request authors can't approve their own pull request.")
+	if e.Issue.User.GetLogin() == e.Comment.User.GetLogin() {
+		gh.CreateComment(e.Issue.GetCommentsURL(), "Pull request authors can't approve their own pull request.")
 		return
 	}
 	// check write access
-	haveWriteAccess, err := gh.HaveWriteAccess(e.Repository.URL, e.Comment.User.Login)
+	haveWriteAccess, err := gh.HaveWriteAccess(e.Repo.GetURL(), e.Comment.User.GetLogin())
 	if err != nil {
 		logrus.Warnf("failed to check write access, err: %v", err)
 		return
 	}
 	if !haveWriteAccess {
 		// send no permission comment
-		gh.CreateComment(e.Issue.CommentsURL, "You have no write access to use /approve instruction.")
+		gh.CreateComment(e.Issue.GetCommentsURL(), "You have no write access to use /approve instruction.")
 		return
 	}
 	// merge
 	// auto add approved label
-	if err := gh.AddApprovedLabel(e.Issue.URL); err != nil {
+	if err := gh.AddApprovedLabel(e.Issue.GetURL()); err != nil {
 		logrus.Warnf("failed to add approved label, err: %v", err)
 		return
 	}
-	pr, err := gh.GetPR(e.Organization.Login, e.Repository.Name, e.Issue.Number)
+	pr, err := gh.GetPR(e.Repo.Owner.GetLogin(), e.Repo.GetName(), e.Issue.GetNumber())
 	if err != nil {
 		logrus.Warnf("failed to get pr, err: %v, continue", err)
 		return
@@ -54,7 +63,7 @@ func (h *prCommentInstructionApproveHandler) Execute(ctx context.Context, req *h
 	// master branch need at least one approval
 	if *pr.Base.Ref == "master" {
 		// approve by bot
-		if err := gh.ApprovePR(e.Organization.Login, e.Repository.Name, e.Issue.Number); err != nil {
+		if err := gh.ApprovePR(e.Repo.Owner.GetLogin(), e.Repo.GetName(), e.Issue.GetNumber()); err != nil {
 			logrus.Warnf("failed to approve pr, err: %v", err)
 			return
 		}
@@ -63,7 +72,7 @@ func (h *prCommentInstructionApproveHandler) Execute(ctx context.Context, req *h
 	// async merge until success
 	go func() {
 		for {
-			pr, err := gh.GetPR(e.Organization.Login, e.Repository.Name, e.Issue.Number)
+			pr, err := gh.GetPR(e.Repo.Owner.GetLogin(), e.Repo.GetName(), e.Issue.GetNumber())
 			if err != nil {
 				logrus.Warnf("failed to get pr, err: %v, continue", err)
 				goto sleep
@@ -76,14 +85,14 @@ func (h *prCommentInstructionApproveHandler) Execute(ctx context.Context, req *h
 			}
 			switch pr.GetMergeableState() {
 			case "behind":
-				if err := gh.UpdateBranch(e.Organization.Login, e.Repository.Name, e.Issue.Number); err != nil {
+				if err := gh.UpdateBranch(e.Repo.Owner.GetLogin(), e.Repo.GetName(), e.Issue.GetNumber()); err != nil {
 					logrus.Warnf("failed to update branch, err: %v, continue", err)
 					goto sleep
 				}
 			case "blocked":
 				goto sleep
 			default:
-				result, err := gh.MergePR(e.Organization.Login, e.Repository.Name, e.Issue.Number)
+				result, err := gh.MergePR(e.Repo.Owner.GetLogin(), e.Repo.GetName(), e.Issue.GetNumber())
 				if err != nil {
 					logrus.Warnf("failed to merge pr, err: %v, continue", err)
 					goto sleep
