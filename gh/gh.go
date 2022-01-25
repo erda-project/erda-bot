@@ -67,7 +67,7 @@ func GetRepoStar(owner, repo string) (int, error) {
 	return r.GetStargazersCount(), nil
 }
 
-func ListLabel(owner string, repo string, page, perPage int) ([]*github.Label, error) {
+func ListLabels(owner string, repo string, page, perPage int) ([]*github.Label, error) {
 	opt := &github.ListOptions{Page: page, PerPage: perPage}
 	labels, _, err := client.Issues.ListLabels(context.Background(), owner, repo, opt)
 	return labels, err
