@@ -66,3 +66,20 @@ func GetRepoStar(owner, repo string) (int, error) {
 	}
 	return r.GetStargazersCount(), nil
 }
+
+func ListLabels(owner string, repo string, page, perPage int) ([]*github.Label, error) {
+	opt := &github.ListOptions{Page: page, PerPage: perPage}
+	labels, _, err := client.Issues.ListLabels(context.Background(), owner, repo, opt)
+	return labels, err
+}
+
+func AddLabelsToIssue(owner string, repo string, number int, labels []string) error {
+	_, _, err := client.Issues.AddLabelsToIssue(context.Background(), owner, repo, number, labels)
+	return err
+}
+
+func ListLabelsByIssue(owner string, repo string, number, page, perPage int) ([]*github.Label, error) {
+	opt := &github.ListOptions{Page: page, PerPage: perPage}
+	labels, _, err := client.Issues.ListLabelsByIssue(context.Background(), owner, repo, number, opt)
+	return labels, err
+}
