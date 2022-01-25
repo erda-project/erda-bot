@@ -13,6 +13,8 @@ import (
 	"github.com/erda-project/erda-bot/handlers/issue/comment/instruction/assign"
 	"github.com/erda-project/erda-bot/handlers/issue/comment/instruction/cherrypick"
 	"github.com/erda-project/erda-bot/handlers/issue/pr"
+	`github.com/erda-project/erda-bot/handlers/issue/title`
+	`github.com/erda-project/erda-bot/handlers/issue/title/label`
 	"github.com/erda-project/erda-bot/handlers/star"
 	"github.com/erda-project/erda/pkg/httpserver"
 )
@@ -42,6 +44,9 @@ func Webhooks(ctx context.Context, r *http.Request, vars map[string]string) (htt
 					// other event type handler here
 					star.NewStarHandler(),
 					pr.NewPRHandler(
+						title.NewPrTitleHandler(
+							label.NewPrTitleLabelHandler(),
+						),
 						comment.NewIssueCommentHandler(
 							instruction.NewPrCommentInstructionHandler(
 								cherrypick.NewPrCommentInstructionCherryPickHandler(),
