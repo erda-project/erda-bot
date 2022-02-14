@@ -20,7 +20,6 @@ import (
 	"github.com/erda-project/erda-bot/handlers"
 	"github.com/erda-project/erda-bot/handlers/issue/comment"
 	"github.com/erda-project/erda-bot/handlers/issue/comment/instruction"
-	"github.com/erda-project/erda/pkg/strutil"
 )
 
 // Usage:
@@ -132,7 +131,7 @@ func parseCmdOptsFromArgs(args []string) (CmdType, []CmdOption, error) {
 			continue
 		}
 		cmdOpts = append(cmdOpts, CmdOption{
-			T: OptionType(k),
+			T: OptionType(k[1:]), // trim prefix `-`
 			V: v,
 		})
 	}
@@ -149,8 +148,7 @@ func execCmdTypeOfMakeImageAndAutoPr(e github.IssueCommentEvent, cmdOpts []CmdOp
 	envs := map[string]string{
 		"DOCKER_REGISTRY_USERNAME": conf.ErdaActionsInfo().DockerRegistryUsername,
 		"DOCKER_REGISTRY_PASSWORD": conf.ErdaActionsInfo().DockerRegistryPassword,
-		"ISSUE_ID":                 strutil.String(e.Issue.GetID()),
-		"TIMESTAMP":                strutil.String(time.Now().Second()),
+		"AUTO_BRANCH":              fmt.Sprintf("%d-%d", e.Issue.GetID(), time.Now().Second()),
 		"ACTIONS_TO_MAKE": func() string {
 			var actionsToMake []string
 			for _, opt := range cmdOpts {

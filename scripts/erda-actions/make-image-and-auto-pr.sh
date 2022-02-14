@@ -5,14 +5,14 @@ set -e -o pipefail
 # already inside temporary dir
 
 # docker login
-docker login registry.erda.cloud -u "${DOCKER_REGISTRY_USERNAME}" -p "${DOCKER_REGISTRY_PASSWORD}"
+docker login erda-registry.cn-hangzhou.cr.aliyuncs.com -u "${DOCKER_REGISTRY_USERNAME}" -p "${DOCKER_REGISTRY_PASSWORD}"
 # git clone
 git clone https://github.com/erda-project/erda-actions -b master
 # unshallow
 git remote add erda-bot https://github.com/erda-bot/erda-actions.git
 git remote update
 # create branch
-autoBranch="auto-actions-by-issue-comment-${ISSUE_ID}-${TIMESTAMP}"
+autoBranch="auto-actions-by-issue-comment-${AUTO_BRANCH}"
 git checkout -b "${autoBranch}"
 # auto build&push image, and git commit
 AUTO_GIT_COMMIT=true make "${ACTIONS_TO_MAKE}"
