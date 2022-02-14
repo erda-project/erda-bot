@@ -11,11 +11,15 @@ type Conf struct {
 
 	DingTalkAccessToken string `env:"DINGTALK_ACCESS_TOKEN"`
 	DingTalkSecret      string `env:"DINGTALK_SECRET"`
+
+	ErdaActionsDockerRegistryUsername string `env:"ERDA_ACTIONS_DOCKER_REGISTRY_USERNAME" required:"true"`
+	ErdaActionsDockerRegistryPassword string `env:"ERDA_ACTIONS_DOCKER_REGISTRY_PASSWORD" required:"true"`
 }
 
 var cfg Conf
 var bot GitHubBot
 var dingtalk DingTalkConf
+var erdaActions ErdaActions
 
 func Load() {
 	envconf.MustLoad(&cfg)
@@ -28,6 +32,10 @@ func Load() {
 		AccessToken: cfg.DingTalkAccessToken,
 		Secret:      cfg.DingTalkSecret,
 	}
+	erdaActions = ErdaActions{
+		DockerRegistryUsername: cfg.ErdaActionsDockerRegistryUsername,
+		DockerRegistryPassword: cfg.ErdaActionsDockerRegistryPassword,
+	}
 }
 
 func Bot() GitHubBot {
@@ -36,4 +44,8 @@ func Bot() GitHubBot {
 
 func DingTalk() DingTalkConf {
 	return dingtalk
+}
+
+func ErdaActionsInfo() ErdaActions {
+	return erdaActions
 }
