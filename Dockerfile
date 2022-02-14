@@ -1,10 +1,10 @@
-FROM golang:1.16-alpine AS BASE
+FROM registry.erda.cloud/retag/golang:1.16-alpine AS BASE
 
 COPY . /code
 WORKDIR /code
 RUN go build -o /app/bot
 
-FROM golang:1.16-alpine
+FROM registry.erda.cloud/retag/golang:1.16-alpine
 
 RUN apk add --no-cache vim git bash gnupg docker-cli make grep
 RUN go get github.com/github/hub && go get github.com/mikefarah/yq/v4
