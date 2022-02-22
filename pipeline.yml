@@ -10,6 +10,8 @@ stages:
           params:
             path: Dockerfile
             workdir: ${repo}
+            build_args:
+              GOPROXY: https://goproxy.cn
   - stage:
       - release:
           params:
