@@ -12,6 +12,8 @@ stages:
             workdir: ${repo}
             build_args:
               GOPROXY: https://goproxy.cn
+              HTTP_PROXY: ${{ configs.HTTP_PROXY }}
+              HTTPS_PROXY: ${{ configs.HTTP_PROXY }}
   - stage:
       - release:
           params:
