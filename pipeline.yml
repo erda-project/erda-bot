@@ -5,21 +5,19 @@ stages:
           alias: repo
           params:
             depth: 1
-  - stage:
-      - dockerfile:
-          params:
-            path: Dockerfile
-            workdir: ${repo}
-            build_args:
-              GOPROXY: https://goproxy.cn
-              HTTP_PROXY: ${{ configs.HTTP_PROXY }}
-              HTTPS_PROXY: ${{ configs.HTTP_PROXY }}
+  #- stage:
+  #    - dockerfile:
+  #        params:
+  #          path: Dockerfile
+  #          workdir: ${repo}
+  #          build_args:
+  #            GOPROXY: https://goproxy.cn
+  #            HTTP_PROXY: ${{ configs.HTTP_PROXY }}
+  #            HTTPS_PROXY: ${{ configs.HTTP_PROXY }}
   - stage:
       - release:
           params:
             dice_yml: ${repo}/dice.yml
-            image:
-              bot: ${dockerfile:OUTPUT:image}
   - stage:
       - dice:
           params:

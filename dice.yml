@@ -1,6 +1,7 @@
 version: "2.0"
 services:
   bot:
+    image: registry.erda.cloud/erda/erda-bot:20250724-140005-8402fe0
     cmd:
     ports:
     - 4567
